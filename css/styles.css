@@ -293,7 +293,7 @@ body.dark .epg-time {
 .channel-item {
     padding: 0.75rem 0.9375rem;
     margin: 0.3125rem 0;
-    background: var(--card-bg);
+    background: rgba(0, 0, 0, 0.3);
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.3s ease;
