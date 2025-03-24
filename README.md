@@ -1,6 +1,6 @@
 # BUDDY TV - Professional Streaming App
 
-![BUDDY TV Logo](https://lolstream.netlify.app/img/logo.png)
+![BUDDY TV Logo](https://buddytv.netlify.app/img/logo.png)
 
 BUDDY TV is a Progressive Web App (PWA) designed to stream your favorite TV channels using custom playlists in M3U, JSON, or TXT formats. With a sleek, responsive UI, dark/light theme support, and features like EPG display and channel filtering, it offers a professional streaming experience directly from your browser or as an installable app.
 
