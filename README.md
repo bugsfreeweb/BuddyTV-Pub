@@ -31,7 +31,7 @@ BUDDY TV is a Progressive Web App (PWA) designed to stream your favorite TV chan
 
 ![Main Interface](./screenshots/entry.png?text=Main+Interface)
 ![Player Light](./screenshots/player-light.png?text=Player+Light)
-![Player dark](./screenshots/player-light.png?text=Player+Dark)
+![Player dark](./screenshots/player-dark.png?text=Player+Dark)
 
 ---
 
