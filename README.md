@@ -49,6 +49,33 @@ BUDDY TV is a Progressive Web App (PWA) designed to stream your favorite TV chan
    ```bash
    git clone https://github.com/bugsfreeweb/BuddyTV-Pub.git
    cd BuddyTV-Pub
+---
+### Notes for Customization:
+1. **Replace Placeholders**:
+   - Update `your-username` in the clone URL with your GitHub username.
+   - Replace screenshot placeholders with actual images (e.g., upload to GitHub or an image host).
+   - Add your name in the Acknowledgments section.
+
+2. **Screenshots**:
+   - Take screenshots of the app (main interface, upload modal, etc.) and upload them to the repo or a hosting service like Imgur.
+
+3. **License**:
+   - If you want a license, create a `LICENSE` file (e.g., MIT License text) and link it in the README.
+
+4. **Hosting**:
+   - Mention your deployed URL (e.g., `https://your_user_name.github.io/BuddyTV-Pub`) if applicable.
+
+---
+
+### How to Add to GitHub:
+1. Create a new repository on GitHub (e.g., `BuddyTV-Pub`).
+2. Initialize locally:
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit"
+   git remote add origin https://github.com/bugsfreeweb/BuddyTV-Pub.git
+   git push -u origin main
 
 ## Dependencies
 - HLS.js (v1.5.13) - Loaded via CDN for HLS streaming.
