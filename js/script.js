@@ -1,6 +1,6 @@
 'use strict';
 
-class BuddyTV {
+class BugsfreeTV {
     constructor() {
         this.channels = [];
         this.channelGroups = {};
@@ -262,9 +262,9 @@ class BuddyTV {
         const active = this.channels.filter(c => c.status === 'active').length;
         const offline = total - active;
         this.playlistStats.innerHTML = `
-            <span onclick="document.buddyTV.filterChannels('total')">Total: ${total}</span> | 
-            <span onclick="document.buddyTV.filterChannels('active')">Active: ${active}</span> | 
-            <span onclick="document.buddyTV.filterChannels('offline')">Offline: ${offline}</span>
+            <span onclick="document.bugsfreeTV.filterChannels('total')">Total: ${total}</span> | 
+            <span onclick="document.bugsfreeTV.filterChannels('active')">Active: ${active}</span> | 
+            <span onclick="document.bugsfreeTV.filterChannels('offline')">Offline: ${offline}</span>
         `;
     }
 
@@ -550,7 +550,7 @@ class BuddyTV {
     displayUploadHistory() {
         this.uploadHistoryContainer.innerHTML = this.uploadHistory.map(item => {
             const [time, entry] = item.split(' - ');
-            return `<div class="upload-history-item" onclick="document.buddyTV.loadFromHistory('${entry}')">${item}</div>`;
+            return `<div class="upload-history-item" onclick="document.bugsfreeTV.loadFromHistory('${entry}')">${item}</div>`;
         }).join('');
     }
 
@@ -713,5 +713,5 @@ class BuddyTV {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    document.buddyTV = new BuddyTV();
+    document.bugsfreeTV = new BugsfreeTV();
 });
