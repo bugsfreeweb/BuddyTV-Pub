@@ -56,7 +56,7 @@ class BugsfreeTV {
         const message = `Welcome to BUDDY TV!\nStream your favorite channels effortlessly.\n\nDisclaimer: This app does not host or provide any content. Users must upload their own playlists (M3U/JSON/TXT). We are not responsible for the legality or quality of the content you stream.`;
         this.notification.textContent = message;
         this.notification.classList.add('show');
-        setTimeout(() => this.notification.classList.remove('show'), 6000); // Longer duration for reading
+        setTimeout(() => this.notification.classList.remove('show'), 6000);
     }
 
     updatePlayerSize() {
@@ -86,9 +86,24 @@ class BugsfreeTV {
         this.updatePlayerSize();
     }
 
+    // Normalize URLs to HTTPS
+    normalizeUrl(url) {
+        if (url.startsWith('http://')) {
+            console.warn(`Converting HTTP to HTTPS: ${url}`);
+            return url.replace('http://', 'https://');
+        }
+        if (/^http:\/\/\d+\.\d+\.\d+\.\d+/.test(url)) {
+            console.warn(`IP-based URL detected: ${url}. Consider using a domain with HTTPS or a proxy.`);
+            // Optional: Proxy it (uncomment if you set up a proxy)
+            // return `https://your-proxy.com/proxy?url=${encodeURIComponent(url)}`;
+        }
+        return url;
+    }
+
     async fetchM3U(url) {
         try {
-            const response = await fetch(url, { cache: 'no-store' });
+            const normalizedUrl = this.normalizeUrl(url);
+            const response = await fetch(normalizedUrl, { cache: 'no-store' });
             if (!response.ok) throw new Error(`M3U fetch failed: ${response.status}`);
             const data = await response.text();
             this.channels = this.removeDuplicates(this.parseM3U(data));
@@ -102,14 +117,15 @@ class BugsfreeTV {
             return true;
         } catch (error) {
             console.error('M3U fetch failed:', error);
-            this.showNotification('Failed to load M3U playlist');
+            this.showNotification('Failed to load M3U playlist. Ensure it uses HTTPS.');
             return false;
         }
     }
 
     async fetchEPG(url) {
         try {
-            const response = await fetch(url, { cache: 'no-store' });
+            const normalizedUrl = this.normalizeUrl(url);
+            const response = await fetch(normalizedUrl, { cache: 'no-store' });
             if (!response.ok) throw new Error(`EPG fetch failed: ${response.status}`);
             const data = await response.text();
             const parser = new DOMParser();
@@ -149,13 +165,13 @@ class BugsfreeTV {
                     status: 'unknown'
                 };
                 const logoMatch = line.match(/tvg-logo=["'](.*?)["']/i);
-                currentChannel.logo = logoMatch ? logoMatch[1] : 'https://buddytv.netlify.app/img/no-logo.png';
+                currentChannel.logo = logoMatch ? this.normalizeUrl(logoMatch[1]) : 'https://buddytv.netlify.app/img/no-logo.png';
             } else if (line.startsWith('#EXTGRP:')) {
                 currentChannel.group = line.split(':')[1].trim() || 'Ungrouped';
             } else if (line.startsWith('#EXTTVM:')) {
                 currentChannel.id = line.split(':')[1].trim();
             } else if (currentChannel && !line.startsWith('#')) {
-                currentChannel.url = line;
+                currentChannel.url = this.normalizeUrl(line);
                 channels.push(currentChannel);
                 this.channelGroups[currentChannel.group] = this.channelGroups[currentChannel.group] || [];
                 this.channelGroups[currentChannel.group].push(currentChannel);
@@ -182,10 +198,10 @@ class BugsfreeTV {
         const parsed = JSON.parse(data);
         const channels = parsed.map(item => ({
             title: item.name || item.title || 'Untitled',
-            url: item.url || item.stream || '',
+            url: this.normalizeUrl(item.url || item.stream || ''),
             group: item.group || item.category || 'Ungrouped',
             id: item.id || '',
-            logo: item.logo || 'https://buddytv.netlify.app/img/no-logo.png',
+            logo: this.normalizeUrl(item.logo || 'https://buddytv.netlify.app/img/no-logo.png'),
             programs: [],
             status: 'unknown'
         }));
@@ -198,7 +214,7 @@ class BugsfreeTV {
         const lines = data.split('\n').filter(line => line.trim());
         const channels = lines.map((line, index) => ({
             title: `Channel ${index + 1}`,
-            url: line.trim(),
+            url: this.normalizeUrl(line.trim()),
             group: 'Imported',
             id: '',
             logo: 'https://buddytv.netlify.app/img/no-logo.png',
@@ -236,11 +252,11 @@ class BugsfreeTV {
                 method: 'HEAD', 
                 signal: controller.signal, 
                 cache: 'no-store',
-                mode: 'no-cors'
+                mode: 'cors' // Changed to 'cors' for better HTTPS compatibility
             })
             .then(response => {
                 clearTimeout(timeout);
-                channel.status = response.type === 'opaque' ? 'active' : 'offline';
+                channel.status = response.ok ? 'active' : 'offline';
                 resolve();
             })
             .catch(() => {
@@ -389,10 +405,11 @@ class BugsfreeTV {
         this.loadingIndicator.classList.add('show');
         this.showNotification(`Now Playing: ${this.currentChannel.title}`);
 
-        if (Hls.isSupported() && url.includes('.m3u8')) {
-            this.setupHLS(url);
+        const normalizedUrl = this.normalizeUrl(url);
+        if (Hls.isSupported() && normalizedUrl.includes('.m3u8')) {
+            this.setupHLS(normalizedUrl);
         } else {
-            this.setupNative(url);
+            this.setupNative(normalizedUrl);
         }
     }
 
@@ -416,13 +433,13 @@ class BugsfreeTV {
         });
 
         this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            this.videoPlayer.play().catch(e => this.handleError(e, 'Playback failed'));
+            this.videoPlayer.play().catch(e => this.handleError(e, 'HLS Playback failed'));
         });
 
         this.hls.on(Hls.Events.ERROR, (event, data) => {
             if (data.fatal) {
-                this.handleError(data, 'Streaming error');
-                this.setupNative(url);
+                this.handleError(data, 'HLS Streaming error');
+                this.setupNative(url); // Fallback to native playback
             }
         });
 
@@ -630,7 +647,8 @@ class BugsfreeTV {
         this.showNotification('Loading URL...');
 
         try {
-            const response = await fetch(url, { cache: 'no-store' });
+            const normalizedUrl = this.normalizeUrl(url);
+            const response = await fetch(normalizedUrl, { cache: 'no-store' });
             if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
             const data = await response.text();
             if (url.endsWith('.m3u')) {
@@ -655,7 +673,7 @@ class BugsfreeTV {
             if (this.channels.length > 0) this.playChannel(this.channels[0].url);
         } catch (error) {
             console.error('URL upload failed:', error);
-            this.showNotification('Failed to load URL');
+            this.showNotification('Failed to load URL. Ensure it uses HTTPS.');
         } finally {
             this.isUploading = false;
             this.uploadUrlButton.disabled = false;
@@ -689,10 +707,28 @@ class BugsfreeTV {
         this.displayChannels(this.searchInput.value);
     }
 
+    // Enhanced error handling with fallback
     handleError(error, message) {
         console.error(`${message}:`, error);
         this.loadingIndicator.classList.remove('show');
-        this.showNotification(`${message}. Try another channel.`);
+        let detailedMessage = message;
+        if (error?.type === Hls.ErrorTypes.NETWORK_ERROR) {
+            detailedMessage = 'Network error: Stream may be offline or blocked.';
+        } else if (error?.type === Hls.ErrorTypes.MEDIA_ERROR) {
+            detailedMessage = 'Media error: Stream format may not be supported.';
+        } else if (error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
+            detailedMessage = 'This stream is not supported by your browser.';
+        }
+        this.showNotification(`${detailedMessage} Trying next channel...`);
+        
+        // Try next active channel
+        const currentIndex = this.channels.findIndex(c => c.url === this.currentChannel?.url);
+        const nextChannel = this.channels.slice(currentIndex + 1).find(c => c.status === 'active');
+        if (nextChannel) {
+            this.playChannel(nextChannel.url);
+        } else {
+            this.showNotification('No more active channels available.');
+        }
     }
 
     showNotification(message) {
